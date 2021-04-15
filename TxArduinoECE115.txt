@@ -1,0 +1,90 @@
+// TX CODE - TO BE UPLOADED TO NANO
+
+//---------------- DONT EDIT -------------------------------------
+#include <RH_ASK.h>           // libraries for radio transmission
+#ifdef RH_HAVE_HARDWARE_SPI
+#include <SPI.h>
+#endif
+#include <stdio.h>            // library for handling strings
+//-----------------------------------------------------------------
+
+RH_ASK driver(300);          // **Define driver for radio transmission at 300 bits/s**
+
+float e           = 2.71828;     // **initialize with Euler's number to 5 decimal places ( should look like: X.XXXXX )**
+float pi          = 3.14159;     // **initialize with pi to 5 decimal places ( should look like: X.XXXXX )**
+
+//-------------- DONT EDIT -------------------------------------------------------------------------
+char  *pi_char;           // pointer declared to point to where pi is stored in memory
+char  *e_char;            // pointer declared to point to where e is stored in memory
+//---------------------------------------------------------------------------------------------------
+
+int   len_pi      = 7;     // **initialize this variable to number of characters in pi above** - for example: 35.10 is 5 characters (3, 5, ., 1, and 0)
+int   len_e       = 7;     // **initialize this variable to number of characters in e above**
+
+void setup()    //SETUP function - will run once when booting board
+{
+  
+    // ------------------------------ DONT EDIT ----------------------------------------------
+    // Debugging code to start serial monitor and initialize transmitter
+    #ifdef RH_HAVE_SERIAL       
+        Serial.begin(9600);
+    #endif
+        if (!driver.init())
+    #ifdef RH_HAVE_SERIAL
+             Serial.println("init failed");
+    #else
+            ;
+    #endif
+    
+    pi_char = (char *)malloc(len_pi + 1);       // allocate enough memory to store pi as a string
+    e_char  = (char *)malloc(len_e + 1);        // allocate eneough memory to store e as a string
+    // ---------------------------------------------------------------------------------------
+
+    pinMode(13, OUTPUT);             // **set mode of built-in LED to output**
+}
+ 
+void loop()   //LOOP function - will run forever while board has power
+{
+
+    // convert the floats to strings, and store them in the memory 'pointed to' by the pointers
+    //    syntax:
+    //          dtostrf( float_variable, length_of_string, number_of_decimal_places, pointer);
+    //
+    dtostrf(pi,len_pi,5, pi_char);               // **convert pi to a string and store in location pointed to by pi_char**
+    dtostrf(e, len_e, 5, e_char);               // **convert e to a string and store in location pointed to by e_char**
+    
+
+    // can only transmit a single string: need to combine both strings into one
+    //    syntax:
+    //          char *new_pointer  = strcat( old_pointer, added_string );
+    //
+    char *add_space   = strcat(pi_char, " ");       // **add a space (use " ") to pi_char and store in location pointed to by add_space**
+    char *add_e       = strcat(pi_char, e_char);                   // **add e to add_space and store in location pointed to by add_e**
+    char *msg         = add_e;                      // **define msg (to be sent) as the full string**
+    
+    // Debug (looking at variables)
+    Serial.print("pi_char: ");
+    Serial.println(pi_char);
+    Serial.print("add_space: ");
+    Serial.println(add_space);
+    Serial.print("add_e: ");
+    Serial.println(add_e);
+    Serial.print("pi: ");
+    Serial.println(pi, 5);
+    Serial.print("msg: ");
+    Serial.println(msg);
+    
+    
+
+    // --------------- DONT EDIT ----------------------------------------------------
+    driver.send((uint8_t *)msg, strlen(msg));   // transmit the data
+    driver.waitPacketSent();                    // wait until data finishes sending
+    // ------------------------------------------------------------------------------
+
+    digitalWrite(13, HIGH);                      // **turn built-in LED on (for visual feedback)**
+    delay(100);
+    digitalWrite(13, LOW);                      // **turn built-in LED off**
+    
+    delay(3000);                             // **delay so that transmission occurs (about) once every 3000 milliseconds**
+    
+}

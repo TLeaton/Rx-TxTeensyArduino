@@ -1,0 +1,72 @@
+// RX CODE - TO BE UPLOADED TO TEENSY
+
+//---------------- DONT EDIT -------------------------------------
+#include <RH_ASK.h>
+#ifdef RH_HAVE_HARDWARE_SPI
+#include <SPI.h> // Not actually used but needed to compile
+#endif
+#include <stdlib.h>
+#include <stdio.h>
+//-----------------------------------------------------------------
+ 
+RH_ASK driver(300);                  // **declare a driver object for the receiver at 300 bits/s**
+
+unsigned long timer = millis();                // **declare a variable for timed feedback, and initialize with millis()**
+ 
+void setup()
+{
+
+  // ------------------------------ DONT EDIT ----------------------------------------------
+  // Debugging code to start serial monitor and initialize transmitter    
+  #ifdef RH_HAVE_SERIAL
+      Serial.begin(9600);   // Debugging only
+  #endif
+  if (!driver.init())
+  #ifdef RH_HAVE_SERIAL
+    Serial.println("init failed");
+  #else
+    ;
+  #endif
+  // ---------------------------------------------------------------------------------------
+
+  pinMode(13, OUTPUT);             // **set mode of built-in LED to output**
+  
+}
+ 
+void loop()
+{
+    
+    //---------------- DONT EDIT -------------------------------------
+    uint8_t buf[15];                            // reserve buffer spots for message ( 7 + 1 + 7 for both numbers and the space)
+    uint8_t buflen = sizeof(buf);               // length of message to be received
+    char *e_char;                               // pointer to Euler's number string
+    //----------------------------------------------------------------
+
+    if (driver.recv(buf, &buflen))              // if message received, this reads in the message (string stored in buf)
+    {
+
+        // ---------------------- DONT EDIT --------------------------------------------------------
+        // both values received in a single string: need to pull them apart and convert to floats
+        float pi  = strtod((char*)buf, &e_char);  // pull out pi
+        float e   = strtod(e_char, NULL);         // pull out e
+        // -----------------------------------------------------------------------------------------
+
+        Serial.println("-----Message Recieved-----");
+        Serial.println(e, 5);                                        // **print the received values to the serial monitor in the correct format**
+        Serial.println(pi, 5);
+        Serial.println(" ");
+        
+        digitalWrite(13, HIGH );                        // **turn built-in LED on (for visual feedback)**
+        delay(100);
+        digitalWrite(13, LOW );                        // **turn built-in LED off**
+
+         timer += 4000;                                       // **add 4000 miliseconds to timer variable**   
+    }
+    else if ( millis()>  timer)                     // **insert timer variable**, if no message received for 4 seconds, print out message 
+    {
+      Serial.println("Message not received. Waiting...");
+      timer += 4000;                           // **add 4000 milliseconds to timer variable**
+    }
+
+    
+}
